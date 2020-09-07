@@ -10,10 +10,13 @@ ${TARGET}: ${OBJS}
 
 main.o:
 
-.PHONY: do clean
+.PHONY: do clean menu
 
 do: 
 	@./${TARGET}
 
 clean: 
 	rm ${OBJS}
+
+help:
+	@./helpSort

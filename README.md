@@ -14,7 +14,6 @@ terminal風にコマンド入力するRPGプログラム
     - [`help`](#help)
   - [メニュー](#メニュー)
     - [`info` - 自分の情報](#info---自分の情報)
-    - [`custom` - カスタマイズ](#custom---カスタマイズ)
     - [`equip` - 武器メニュー](#equip---武器メニュー)
     - [`battle` - バトル](#battle---バトル)
     - [`shop` - 武器とか買える *`10n+1`階層で使える*](#shop---武器とか買える-10n1階層で使える)
@@ -25,6 +24,8 @@ terminal風にコマンド入力するRPGプログラム
   - [毎ターン](#毎ターン)
 - [データの形式](#データの形式)
   - [player.md](#playermd)
+  - [weapon.md](#weaponmd)
+  - [special.md](#specialmd)
 
 # アイデア
 
@@ -93,8 +94,9 @@ terminal風にコマンド入力するRPGプログラム
 - leg - 足装備
 - special - その他装備
 
-<!-- 改ページ -->
+<!-- 改ページ 
 <div style="page-break-before:always"></div>
+-->
 
 # 表示するもの/`command`
 
@@ -112,17 +114,17 @@ name 1F$ hoge
 ```
 
 ### `info` - 自分の情報
-  - [ ] 名前
-  - [ ] HP/MAX
-  - [ ] ATK
-  - [ ] DEF
-  - [ ] SPD
-  - [ ] LVL
-  - [ ] EXP/NEXT
-  - [ ] 階層
+  - [x] 名前
+  - [x] HP/MAX
+  - [x] ATK
+  - [x] DEF
+  - [x] SPD
+  - [x] LVL
+  - [x] EXP/NEXT
+  - [x] 階層
   - [ ] 装備
-### `custom` - カスタマイズ
 ### `equip` - 武器メニュー
+装備変更
 ### `battle` - バトル
 ### `shop` - 武器とか買える *`10n+1`階層で使える*
 ### `save` - セーブ
@@ -130,7 +132,7 @@ name 1F$ hoge
 
 # バトルの流れ
 ```
-menu $ battle [Enter]
+name 1F$ battle [Enter]
 1. name
 2. name / back 1 floor
 3. name
@@ -142,6 +144,8 @@ battle $ 1 [Enter]
 ## 開始時
 
 - [ ] 双方の特殊効果の設定
+- [ ] weaponのデータを作って補正値をそこにまとめる
+- [ ] tempのデータを作って補正値はそこに毎ターン足す
 
 ## 毎ターン
 
@@ -151,44 +155,46 @@ battle $ 1 [Enter]
 
 markdownで保存
   
-読み出し方法は以下の通り（`|`を空白に変換してストリームから読み込み）
-
-```cpp
-#include <iostream>
-#include <fstream>
-#include <sstream> //stringstream
-#include <algorithm> //replace
-using namespace std;
-
-void mdReplace(string &str, stringstream &ss){
-  replace(str.begin(), str.end(), '|', ' ');
-  ss << str;
-}
-
-int main(){
-  string n;int h,a,d,e;char c;
-  stringstream ss;
-  ifstream fp("test.md");
-  getline(fp, n);getline(fp, n);
-  
-  while(getline(fp, n)){
-    mdReplace(n, ss);
-    ss >> n >> h >> a >> d >> e;
-    cout << n << h << a << d << e << endl;
-  }
-  return 0;
-}
-```
+読み出し方法は、`|`を空白に変換してストリームから読み込む
 
 ## player.md
 新規データ
 
 ```md
 ## 各種データ
-| 名前 | HP  | MAX_HP | ATK | DEF | SPD% | EXP | GLD | SPE | LVL | STG | 頭  | 体  | 武器 | 盾  | 脚  | 特殊 |
-| ---- | --- | ------ | --- | --- | ---- | --- | --- | --- | --- | --- | --- | --- | ---- | --- | --- | ---- |
-| ohys | 100 | 100    | 10  | 5   | 100  | 0   | 100 | 0   | 1   | 1   | 0   | 0   | 0    | 0   | 0   | 0    |
+| 名前 | HP  | MAX_HP | ATK | DEF | SPD% | EXP | GLD | LVL | STG | 頭  | 体  | 武器 | 盾  | 脚  | 特殊 |
+| ---- | --- | ------ | --- | --- | ---- | --- | --- | --- | --- | --- | --- | ---- | --- | --- | ---- |
+| ohys | 100 | 100    | 10  | 5   | 100  | 0   | 100 | 1   | 0   | 0   | 0   | 0    | 0   | 0   | 0    |
 
 ## 戦闘キュー
-1 3 5 7 9
+
 ```
+
+## weapon.md
+
+武器一覧
+
+表形式で一覧に。
+
+- タイプ {頭, 体, 武器, 盾, 脚, 特殊} = {0,1,2,3,4,5}
+- 名前
+- 各補正量
+  - dHP
+  - dATK
+  - dDEF
+  - dSPD
+- 特殊効果
+  - タイプ
+  - 発動確率
+
+## special.md
+
+特殊効果。番号の小さい方から適用される
+
+- [ ] 戦闘開始時に武器から読み取り`vector<pair>`に入れる。sortする
+
+0. なし
+1. 先制攻撃
+2. 100%回避
+3. 100%命中（100%回避より強い）
+4. 起死回生（死亡するダメ時を負った時確率でHP1で残る）
