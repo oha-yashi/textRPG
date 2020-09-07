@@ -1,1 +1,1 @@
-exit help test 
+exit help info 
