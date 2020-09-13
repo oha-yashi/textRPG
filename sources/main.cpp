@@ -1,26 +1,19 @@
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <algorithm>
-#include <utility> //pair
-#include <deque>
-#include <random>
-#include <stdexcept>
-
-using namespace std;
-
-#define MY_DEBUG
-
-#define P_FILE "data/player.md"
-#define M_FILE "data/monster.md"
-#define B_FILE "data/boss.md"
-#define W_FILE "data/weapon.md"
-
-#define rep(i,n) for(int i=0; i<(int)n; i++)
+#include "textrpg.h"
 
 void mdTableReplace(string &str, stringstream &ss){
   replace(str.begin(), str.end(), '|', ' ');
   ss << str;
+}
+
+template<class F> void mdPush(stringstream &ss, F &&f){ss << "| " << f << " |" << endl;}
+template<class F, class ...S> void mdPush(stringstream &ss, F &&f, S &&...s){ss << "| " << f << " "; mdPush(ss, forward<S>(s)...);}
+template<class ...P> string mdString(P &...p){
+  stringstream ss; mdPush(ss, p...); return ss.str();
+}
+string mdLine(int n){
+  string str("|");
+  rep(i,n)str += " -- |";
+  return str;
 }
 
 void openHelp(string filename){
@@ -39,17 +32,14 @@ struct Weapon{
   pair<int, int> special_effect;
 
   //デフォルトコンストラクタ
-  Weapon(): type(0), name("Null"), dHP(0), 
-  dATK(0), dDEF(0), dSPD(0) , special_effect(0,0) {};
-
-  Weapon(string n): type(0), name(n), dHP(0), 
-  dATK(0), dDEF(0), dSPD(0) , special_effect(0,0) {};
+  Weapon(): type(0), name("Null"), dHP(0), dATK(0), dDEF(0), dSPD(0) , special_effect(0,0) {};
+  Weapon(string n): type(0), name(n), dHP(0), dATK(0), dDEF(0), dSPD(0) , special_effect(0,0) {};
   //全値設定用コンストラクタ
   Weapon(int _type, string _name, int dhp, int datk, int ddef, int dspd, pair<int,int> se):
   type(_type), name(_name), dHP(dhp), dATK(datk), dDEF(ddef), dSPD(dspd),special_effect(se){};
 
   void info(){
-    printf("%s \"%s\" dHP:%d dATK:%d dDEF:%d dSPD:%d ",
+    printf("%-6s \"%-s\"\tdHP:%d dATK:%d dDEF:%d dSPD:%d ",
     weapon_type[type].c_str(), name.c_str(), dHP, dATK, dDEF, dSPD);
     printf("effect %d:%d%%\n", special_effect.first, special_effect.second);
   }
@@ -87,52 +77,42 @@ Weapon get_weapon(int n){
 }
 
 struct Player{
-  string name;
-  int HP, MAX_HP, ATK, DEF, SPD, EXP, GLD, LVL, STG, 
-  head, body, weapon, shield, leg, spe;
-  deque<int> monster_que;
+  string name; int LVL, EXP, GLD, STG, PROG;
+  int HP, MAX_HP, ATK, DEF, SPD;
+  int head, body, weapon, shield, leg, spe;
 
   void info(){
-    printf("player \"%s\" LVL:%d @%dF ", name.c_str(), LVL, STG);
+    printf("player \"%s\" LVL:%d @%dF_%d%% ", name.c_str(), LVL, STG, PROG);
     printf("EXP:%d GLD:%d\n", EXP, GLD);
-    printf("HP:%d/%d ATK:%d DEF:%d SPD:%d%%\n", HP, MAX_HP, ATK, DEF, SPD);
+    printf("HP:%d/%d ATK:%d DEF:%d SPD:%d\n", HP, MAX_HP, ATK, DEF, SPD);
     printf("WEAPONS\n");
     printf("vvvvvvvvvv\n");
-    get_weapon(head).info_short();
-    get_weapon(body).info_short();
-    get_weapon(weapon).info_short();
-    get_weapon(shield).info_short();
-    get_weapon(leg).info_short();
-    get_weapon(spe).info_short();
+    printf("1: "); get_weapon(head).info();
+    printf("2: "); get_weapon(body).info();
+    printf("3: "); get_weapon(weapon).info();
+    printf("4: "); get_weapon(shield).info();
+    printf("5: "); get_weapon(leg).info();
+    printf("6: "); get_weapon(spe).info();
     printf("^^^^^^^^^^\n");
-
-    #ifdef MY_DEBUG
-    printf("Monster Queue : ");
-    if(monster_que.size() > 0){
-      for(int x: monster_que)printf("%d ", x);
-      printf("\n");
-    }else{
-      printf("none\n");
-    }
-    #endif
 
     string com;
     while(1){
       printf("info$ ");
       getline(cin, com);
 
-      if(com == "help"){
+      if(COMMAND_HELP(com)){
         openHelp("info.txt");
       }else
+      /*
       if(com.substr(0,2) == "wd"){
         try{
           switch(stoi(com.substr(2))){
-            case 0: get_weapon(head).info(); break;
-            case 1: get_weapon(body).info(); break;
-            case 2: get_weapon(weapon).info(); break;
-            case 3: get_weapon(shield).info(); break;
-            case 4: get_weapon(leg).info(); break;
-            case 5: get_weapon(spe).info(); break;
+            case 1: get_weapon(head).info(); break;
+            case 2: get_weapon(body).info(); break;
+            case 3: get_weapon(weapon).info(); break;
+            case 4: get_weapon(shield).info(); break;
+            case 5: get_weapon(leg).info(); break;
+            case 6: get_weapon(spe).info(); break;
             default: throw -1;
           }
         }
@@ -140,7 +120,8 @@ struct Player{
           printf("no such item\n");
         }
       }else
-      if(com == "exit"){
+      //*/
+      if(COMMAND_EXIT(com)){
         break;
       }
     }
@@ -152,29 +133,43 @@ struct Player{
       string s; stringstream ss;
       
       //データ
-      rep(i,3)getline(fp, s); //読み飛ばし
-      getline(fp, s); mdTableReplace(s, ss);
-      ss >> name
-      >> HP >> MAX_HP >> ATK >> DEF >> SPD >> EXP >> GLD >> LVL >> STG
-      >> head >> body >> weapon >> shield >> leg >> spe;
+      rep(i,4)getline(fp, s); //読み飛ばし3行 + 読み込み1行
+      mdTableReplace(s, ss);
+      ss >> name >> LVL >> EXP >> GLD >> STG >> PROG;
 
-      //戦闘キュー
-      rep(i,2)getline(fp, s); //読み飛ばし
-      int x;
-      while(fp>>x)monster_que.push_back(x);
+      rep(i,5)getline(fp, s); mdTableReplace(s, ss);
+      ss >> HP >> MAX_HP >> ATK >> DEF >> SPD;
+
+      rep(i,5)getline(fp, s); mdTableReplace(s, ss);
+      ss >> head >> body >> weapon >> shield >> leg >> spe;
+
       return true;
     }else{
       return false;
     }
   }
 
-  bool save_data(){
+  void save_data(){
     ofstream fp(P_FILE);
     if(fp){
+      fp << "## 基本データ\n";
+      fp << "| name | LVL | EXP | GLD | STG | PROG |\n";
+      fp << mdLine(6);
+      fp << mdString(name, LVL, EXP, GLD, STG, PROG);
 
-      return true;
+      fp << "\n## 戦闘データ\n";
+      fp << "| HP  | MAX_HP | ATK | DEF | SPD |\n";
+      fp << mdLine(5);
+      fp << mdString(HP, MAX_HP, ATK, DEF, SPD);
+
+      fp << "\n## 武器データ\n";
+      fp << "| head | body | weapon | shield | leg | spe |\n";
+      fp << mdLine(6);
+      fp << mdString(head, body, weapon, shield, leg, spe);
+
+      printf("success to save!\n");
     }else{
-      return false;
+      printf("fale to save!\n");
     }
   }
 };
@@ -191,13 +186,16 @@ int main(){
   while(1){
     printf("%s %dF$ ", me.name.c_str(), me.STG);
     getline(cin, com);
-    if(com == "help"){
+    if(COMMAND_HELP(com)){
       openHelp("menu.txt");
     }else 
     if(com == "info"){
       me.info();
-    }else 
-    if(com == "exit"){
+    }else
+    if(com == "save"){
+      me.save_data();
+    }else
+    if(COMMAND_EXIT(com)){
       break;
     }
   }
