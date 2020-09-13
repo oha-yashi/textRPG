@@ -39,7 +39,7 @@ struct Weapon{
   type(_type), name(_name), dHP(dhp), dATK(datk), dDEF(ddef), dSPD(dspd),special_effect(se){};
 
   void info(){
-    printf("%-6s \"%-s\"\tdHP:%d dATK:%d dDEF:%d dSPD:%d ",
+    printf("%-6s \"%-s\"\n>> dHP:%d dATK:%d dDEF:%d dSPD:%d ",
     weapon_type[type].c_str(), name.c_str(), dHP, dATK, dDEF, dSPD);
     printf("effect %d:%d%%\n", special_effect.first, special_effect.second);
   }
@@ -169,7 +169,7 @@ struct Player{
 
       printf("success to save!\n");
     }else{
-      printf("fale to save!\n");
+      printf("fale to save!%s\n");
     }
   }
 };
