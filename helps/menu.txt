@@ -1,1 +1,1 @@
-exit help info 
+exit/E help/H info 
